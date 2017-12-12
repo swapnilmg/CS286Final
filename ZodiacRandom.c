@@ -20,13 +20,15 @@ void swapColumns(long data[], int rows, int rowLen, int i, int j);
 void printColumns(long data[], int rowLen, int dataLen);
 int hillClimb(sg_obs_t *obs, double **A);
 int random_permuatation(sg_obs_t *obs, double **A);
+void columnCopy(long sourceObs[], long destObst[], int sourceCol, int destCol, int rowLen);
+void randomShuffle(sg_obs_t *obs, int numCols, int numRows);
 
 
 int main(int argc, char *argv[]) {
     /* code */
 
     char *folder_name;
-	long seed;
+	  long seed;
     int count = 1;
     int reestimate;
 
@@ -46,7 +48,7 @@ int main(int argc, char *argv[]) {
     obs->N = 26;
     obs->T = 408;
     sg_obs_Allocate(obs);
-    
+
     //sg_obs_t *obs2 = sg_obs_Create();
     //obs2->N = 26;
     //obs2->T = 408;
@@ -57,13 +59,13 @@ int main(int argc, char *argv[]) {
         obs->seq[i] = cipher_text[i];
         //obs2->seq[i] = plain_text[i]-1;
     }
-    
+
     double **A, **B, best_model_score = -99999;
-    /* Initialize A */
-	A = (double **) malloc(obs->N * sizeof(double *));
-	A[0] = (double *) malloc(obs->N * obs->N * sizeof(double));
-	for(int i = 0; i < obs->N; i++)
-        A[i] = (*A + obs->N * i);
+      /* Initialize A */
+  	A = (double **) malloc(obs->N * sizeof(double *));
+  	A[0] = (double *) malloc(obs->N * obs->N * sizeof(double));
+  	for(int i = 0; i < obs->N; i++)
+          A[i] = (*A + obs->N * i);
 
     obtainDiagraphFrequency(A, folder_name);
 
@@ -71,30 +73,102 @@ int main(int argc, char *argv[]) {
     sg_hmm_t *mod = sg_hmm_Create();
     mod->N = 26;
     mod->M = 26;
-    
+
     sg_hmm_InitRandomWithoutA(mod);
     mod->A = A;
-    sg_trainWithoutA(mod, obs, 200);   
+    sg_trainWithoutA(mod, obs, 200);
     best_model_score = _computeLogScore(obs);
     printf("Initial Score: %f\n", best_model_score);
 
-    srand(time(NULL)); 
+    srand(time(NULL));
 
     while(count-- > 0) {
-        random_permuatation(obs, A);
+        randomShuffle(obs, 17, 24);
+        printf("\nNew Arrangement:\n");
+        printColumns(obs->seq, 17, 24*17);
+        //hillClimb(obs, A);
     }
 
+    printf("\nThreshold reached");
     printColumns(obs->seq, 17, 24*17);
+    return 0;
+}
 
+void randomShuffle(sg_obs_t *obs, int numCols, int numRows){
+  long suffledSeq[obs->T];
+  int occupied[numCols];
+
+  memset(occupied, 0, numCols*sizeof(int)) ;
+  memset(suffledSeq, 0, obs->T*sizeof(long));
+
+  for(int oldPos=0; oldPos<numCols; oldPos++){
+    // Each column in the original sequence in moved to a new column position
+    short newPos = rand()%numCols;
+    while(occupied[newPos] != 0)
+      // Identifying an unoccupied poistion
+      newPos = rand()%numCols;
+    columnCopy(obs->seq, suffledSeq, oldPos, newPos, numRows);
+    occupied[newPos] = 1;
+  // Copy shuffled array to original sequence
+  obs->seq = suffledSeq;
+
+}
+
+int hillClimb(sg_obs_t *obs, double **A) {
+    for (int i = 0; i < 16; ++i)
+    {
+        for (int j = 0; j < 16-i; ++j)
+        {
+            printf("Swapping columns %d, %d: ", j, j+i+1);
+            swapColumns(obs->seq, 24, 17, j, j+i+1);
+            /* Create random model */
+            sg_hmm_t *mod = sg_hmm_Create();
+            mod->N = 26;
+            mod->M = 26;
+
+            sg_hmm_InitRandomWithoutA(mod);
+            mod->A = A;
+            sg_trainWithoutA(mod, obs, 200);
+            double score = _computeLogScore(obs);
+            printf("Score: %f, Best Score: %f\n", score, best_model_score);
+            if(score > -1050) {
+                printColumns(obs->seq, 17, 17*24);
+            }
+            if(best_model_score < score){
+                best_model_score = score;
+                return 1;
+            }
+            /* Create random model */
+            mod = sg_hmm_Create();
+            mod->N = 26;
+            mod->M = 26;
+
+            sg_hmm_InitRandomWithoutA(mod);
+            mod->A = A;
+            sg_trainWithoutA(mod, obs, 200);
+            score = _computeLogScore(obs);
+            printf("Score: %f, Best Score: %f\n", score, best_model_score);
+            if(score > -1050) {
+                printColumns(obs->seq, 17, 17*24);
+            }
+            if(best_model_score < score){
+                best_model_score = score;
+                return 1;
+            }
+            swapColumns(obs->seq, 24, 17, j, j+i+1);
+            printf("Undoing swapping of columns %d, %d\n", j, j+i+1);
+        }
+
+    }
     return 0;
 }
 
 int random_permuatation(sg_obs_t *obs, double **A) {
-    
+
     // should only be called once
     int i=0, j = 0;
     while(i==j){
-        i = rand() % 17; 
+        i = rand() % 17;
         j = rand() % 17;
     }
 
@@ -104,10 +178,10 @@ int random_permuatation(sg_obs_t *obs, double **A) {
     sg_hmm_t *mod = sg_hmm_Create();
     mod->N = 26;
     mod->M = 26;
-    
+
     sg_hmm_InitRandomWithoutA(mod);
     mod->A = A;
-    sg_trainWithoutA(mod, obs, 50);   
+    sg_trainWithoutA(mod, obs, 50);
     double score = _computeLogScore(obs);
     printf("Score: %f, Best Score: %f\n", score, best_model_score);
     if(score > -1050) {
@@ -121,10 +195,10 @@ int random_permuatation(sg_obs_t *obs, double **A) {
     mod = sg_hmm_Create();
     mod->N = 26;
     mod->M = 26;
-    
+
     sg_hmm_InitRandomWithoutA(mod);
     mod->A = A;
-    sg_trainWithoutA(mod, obs, 50);   
+    sg_trainWithoutA(mod, obs, 50);
     score = _computeLogScore(obs);
     printf("Score: %f, Best Score: %f\n", score, best_model_score);
     if(score > -1050) {
@@ -169,6 +243,12 @@ void printColumns(long data[], int rowLen, int dataLen){
             printf("\n");
         printf("%ld ", data[i]);
     }
+}
+
+void columnCopy(long sourceObs[], long destObst[], int sourceCol, int destCol, int rowLen){
+  for(int i=0; i<rowLen; i++){
+    destObst[i+destCol] = sourceObs[i+sourceCol];
+  }
 }
 
 void obtainDiagraphFrequency(double **A, char *folder_name) {
