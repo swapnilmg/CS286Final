@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < 408; ++i)
     {
-        obs->seq[i] = cipher_text[i];
-        //obs2->seq[i] = plain_text[i]-1;
+        //obs->seq[i] = cipher_text[i];
+        obs->seq[i] = cipher_text[i]-1;
     }
 
     double **A, **B, best_model_score = -99999;
@@ -123,7 +123,7 @@ int hillClimb(sg_obs_t *obs, double **A) {
             /* Create random model */
             sg_hmm_t *mod = sg_hmm_Create();
             mod->N = 26;
-            mod->M = 26;
+            mod->M = 54;
 
             sg_hmm_InitRandomWithoutA(mod);
             mod->A = A;
@@ -142,7 +142,7 @@ int hillClimb(sg_obs_t *obs, double **A) {
             /* Create random model */
             mod = sg_hmm_Create();
             mod->N = 26;
-            mod->M = 26;
+            mod->M = 54;
 
             sg_hmm_InitRandomWithoutA(mod);
             mod->A = A;
