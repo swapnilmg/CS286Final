@@ -54,23 +54,23 @@ int main(int argc, char *argv[]) {
     
     double **A, **B, best_model_score = -99999;
     /* Initialize A */
-	A = (double **) malloc(obs->N * sizeof(double *));
-	A[0] = (double *) malloc(obs->N * obs->N * sizeof(double));
-	for(int i = 0; i < obs->N; i++)
-        A[i] = (*A + obs->N * i);
+	// A = (double **) malloc(obs->N * sizeof(double *));
+	// A[0] = (double *) malloc(obs->N * obs->N * sizeof(double));
+	// for(int i = 0; i < obs->N; i++)
+ //        A[i] = (*A + obs->N * i);
 
-    obtainDiagraphFrequency(A, folder_name);
+ //    obtainDiagraphFrequency(A, folder_name);
 
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 2; ++i)
     {
         /* Create random model */
         sg_hmm_t *mod = sg_hmm_Create();
-        mod->N = 26;
+        mod->N = 2;
         mod->M = 26;
         
-        sg_hmm_InitRandomWithoutA(mod);
+        sg_hmm_InitRandom(mod);
         mod->A = A;
-        sg_trainWithoutA(mod, obs, 200);   
+        sg_train(mod, obs, 200);   
         double score = _computeLogScore(obs);
         if(best_model_score < score){
             best_model_score = score;
@@ -82,16 +82,16 @@ int main(int argc, char *argv[]) {
     
     best_model_score = -99999;
 
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 2; ++i)
     {
         /* Create plain model */
         sg_hmm_t *mod2 = sg_hmm_Create();
-        mod2->N = 26;
+        mod2->N = 2;
         mod2->M = 26;
         
-        sg_hmm_InitRandomWithoutA(mod2);
+        sg_hmm_InitRandom(mod2);
         mod2->A = A;
-        sg_trainWithoutA(mod2, obs2, 200);   
+        sg_train(mod2, obs2, 200);   
         double score =  _computeLogScore(obs2);
         if(best_model_score < score) {
             best_model_score = score;
