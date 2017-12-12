@@ -20,7 +20,7 @@ void swapColumns(long data[], int rows, int rowLen, int i, int j);
 void printColumns(long data[], int rowLen, int dataLen);
 int hillClimb(sg_obs_t *obs, double **A);
 int random_permuatation(sg_obs_t *obs, double **A);
-void columnCopy(long sourceObs[], long destObst[], int sourceCol, int destCol, int rowLen);
+void columnCopy(long sourceObs[], long destObst[], int sourceCol, int destCol, int rowLen, int colLen);
 void randomShuffle(sg_obs_t *obs, int numCols, int numRows);
 
 
@@ -76,43 +76,49 @@ int main(int argc, char *argv[]) {
 
     sg_hmm_InitRandomWithoutA(mod);
     mod->A = A;
-    sg_trainWithoutA(mod, obs, 200);
+    sg_trainWithoutA(mod, obs, 100);
     best_model_score = _computeLogScore(obs);
     printf("Initial Score: %f\n", best_model_score);
 
     srand(time(NULL));
+    //printColumns(obs->seq, 17, 24*17);
 
     while(count-- > 0) {
         randomShuffle(obs, 17, 24);
-        printf("\nNew Arrangement:\n");
-        printColumns(obs->seq, 17, 24*17);
-        //hillClimb(obs, A);
+        while(climb) {
+            climb = hillClimb(obs, A);
+        }
     }
 
-    printf("\nThreshold reached");
-    printColumns(obs->seq, 17, 24*17);
+    //printf("\nThreshold reached");
+    //printColumns(obs->seq, 17, 24*17);
     return 0;
 }
 
 void randomShuffle(sg_obs_t *obs, int numCols, int numRows) {
     long suffledSeq[obs->T];
-    int occupied[numCols];
+    int occupied[numCols] ;
 
     memset(occupied, 0, numCols*sizeof(int)) ;
     memset(suffledSeq, 0, obs->T*sizeof(long));
 
     for(int oldPos=0; oldPos<numCols; oldPos++){
         // Each column in the original sequence in moved to a new column position
-        short newPos = rand()%numCols;
+        short newPos = rand() % numCols;
         while(occupied[newPos] != 0) {
             // Identifying an unoccupied poistion
-            newPos = rand()%numCols;
+            newPos = (newPos + 1) % numCols;
         }
-        columnCopy(obs->seq, suffledSeq, oldPos, newPos, numRows);
+        columnCopy(obs->seq, suffledSeq, oldPos, newPos, numRows, numCols);
         occupied[newPos] = 1;
     }
+
     // Copy shuffled array to original sequence
-    obs->seq = suffledSeq;
+    for (int i = 0; i < numCols * numRows; ++i)
+    {
+        obs->seq[i] = suffledSeq[i];
+    }
+    
 }
 
 int hillClimb(sg_obs_t *obs, double **A) {
@@ -131,12 +137,13 @@ int hillClimb(sg_obs_t *obs, double **A) {
             mod->A = A;
             sg_trainWithoutA(mod, obs, 200);
             double score = _computeLogScore(obs);
-            printf("Score: %f, Best Score: %f\n", score, best_model_score);
+            printf("Best Score: %f, Score: %f", best_model_score, score);
             if(score > -1050) {
                 printColumns(obs->seq, 17, 17*24);
             }
             if(best_model_score < score){
                 best_model_score = score;
+                printf("\n");
                 return 1;
             }
             /* Create random model */
@@ -148,16 +155,17 @@ int hillClimb(sg_obs_t *obs, double **A) {
             mod->A = A;
             sg_trainWithoutA(mod, obs, 200);
             score = _computeLogScore(obs);
-            printf("Score: %f, Best Score: %f\n", score, best_model_score);
+            printf(" Score: %f", score);
             if(score > -1050) {
                 printColumns(obs->seq, 17, 17*24);
             }
             if(best_model_score < score){
                 best_model_score = score;
+                printf("\n");
                 return 1;
             }
             swapColumns(obs->seq, 24, 17, j, j+i+1);
-            printf("Undoing swapping of columns %d, %d\n", j, j+i+1);
+            printf(" Undoing swap!\n");
         }
 
     }
@@ -246,9 +254,10 @@ void printColumns(long data[], int rowLen, int dataLen){
     }
 }
 
-void columnCopy(long sourceObs[], long destObst[], int sourceCol, int destCol, int rowLen){
+void columnCopy(long *sourceObs, long destObst[], int sourceCol, int destCol, int rowLen, int colLen){
   for(int i=0; i<rowLen; i++){
-    destObst[i+destCol] = sourceObs[i+sourceCol];
+    int shift = i*colLen;
+    destObst[shift+destCol] = sourceObs[shift+sourceCol];
   }
 }
 

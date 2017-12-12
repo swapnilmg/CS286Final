@@ -355,7 +355,7 @@ void sg_trainWithoutA(sg_hmm_t *mod, sg_obs_t *obs, int max_itr) {
 		old_log_prob = log_prob;
 	}
 
-	printf("Iterations: %d ", iters);
+	//printf("Iterations: %d ", iters);
 }
 
 double _computeLogScore(sg_obs_t *obs) {
