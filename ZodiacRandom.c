@@ -94,24 +94,25 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void randomShuffle(sg_obs_t *obs, int numCols, int numRows){
-  long suffledSeq[obs->T];
-  int occupied[numCols];
+void randomShuffle(sg_obs_t *obs, int numCols, int numRows) {
+    long suffledSeq[obs->T];
+    int occupied[numCols];
 
-  memset(occupied, 0, numCols*sizeof(int)) ;
-  memset(suffledSeq, 0, obs->T*sizeof(long));
+    memset(occupied, 0, numCols*sizeof(int)) ;
+    memset(suffledSeq, 0, obs->T*sizeof(long));
 
-  for(int oldPos=0; oldPos<numCols; oldPos++){
-    // Each column in the original sequence in moved to a new column position
-    short newPos = rand()%numCols;
-    while(occupied[newPos] != 0)
-      // Identifying an unoccupied poistion
-      newPos = rand()%numCols;
-    columnCopy(obs->seq, suffledSeq, oldPos, newPos, numRows);
-    occupied[newPos] = 1;
-  // Copy shuffled array to original sequence
-  obs->seq = suffledSeq;
-
+    for(int oldPos=0; oldPos<numCols; oldPos++){
+        // Each column in the original sequence in moved to a new column position
+        short newPos = rand()%numCols;
+        while(occupied[newPos] != 0) {
+            // Identifying an unoccupied poistion
+            newPos = rand()%numCols;
+        }
+        columnCopy(obs->seq, suffledSeq, oldPos, newPos, numRows);
+        occupied[newPos] = 1;
+    }
+    // Copy shuffled array to original sequence
+    obs->seq = suffledSeq;
 }
 
 int hillClimb(sg_obs_t *obs, double **A) {
