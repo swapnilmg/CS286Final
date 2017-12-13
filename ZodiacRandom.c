@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
         obs->seq[i] = cipher_text[i]-1;
     }
 
-    double **A, **B, best_model_score = -99999;
+    double **A, **B;
       /* Initialize A */
   	A = (double **) malloc(obs->N * sizeof(double *));
   	A[0] = (double *) malloc(obs->N * obs->N * sizeof(double));
@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
     //printColumns(obs->seq, 17, 24*17);
 
     while(count-- > 0) {
+        best_model_score = -99999;
         climb = 1;
         randomShuffle(obs, 17, 24);
         while(climb) {
